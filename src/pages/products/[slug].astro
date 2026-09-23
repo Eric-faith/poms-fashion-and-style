@@ -1,0 +1,241 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import Icon from '../../components/Icon.astro';
+import { getProducts, naira, isSoldOut, isOnSale, percentOff, slugify, home } from '../../lib/shop';
+import { md } from '../../lib/md';
+
+export async function getStaticPaths() {
+  const products = await getProducts();
+  return products.map((product) => ({ params: { slug: product.id }, props: { product, all: products } }));
+}
+const { product, all } = Astro.props;
+const { Content } = await render(product);
+const { title, price, compare_at_price, images, sizes, category, summary, badge, size_fit } = product.data;
+const soldOut = isSoldOut(product);
+const onSale = isOnSale(product);
+const oneSize = sizes.length === 0 || (sizes.length === 1 && sizes[0].size === 'One size');
+const defaultSize = sizes.length === 0 ? '' : oneSize ? sizes[0].size : null;
+const sameCat = all.filter((p) => p.id !== product.id && p.data.category === category);
+const related = [...sameCat, ...all.filter((p) => p.id !== product.id && p.data.category !== category)].slice(0, 4);
+const detailImage = images.length > 2 ? images[images.length - 1] : images[1] ?? images[0];
+const description = summary ?? product.body?.split('\n').find((l) => l.trim() && !l.startsWith('-'))?.slice(0, 155);
+const wa = `https://wa.me/${home.contact.whatsapp}?text=${encodeURIComponent(`Hi POMS, I have a question about the ${title}.`)}`;
+const tabBtn = 'shrink-0 border-b-2 border-transparent pb-3 text-[15px] text-stone hover:text-ink aria-selected:border-ink aria-selected:text-ink';
+---
+<Base title={title} description={description} image={images[0]}>
+  <div class="mx-auto max-w-[1440px] px-4 pt-5 md:px-8 md:pt-8">
+    <nav aria-label="Breadcrumb" class="mb-5 flex gap-2 text-[13px] text-stone">
+      <a href="/" class="hover:text-ink">Home</a><span aria-hidden="true">/</span>
+      <a href={`/shop/${slugify(category)}/`} class="hover:text-ink">{category}</a><span aria-hidden="true">/</span>
+      <span class="text-ink" aria-current="page">{title}</span>
+    </nav>
+
+    <div class="grid gap-8 lg:grid-cols-12 lg:gap-12">
+      <!-- Gallery -->
+      <div class="lg:col-span-7">
+        <div class="lg:grid lg:grid-cols-[84px_1fr] lg:gap-4">
+          <div class="hidden flex-col gap-3 lg:flex" role="tablist" aria-label="Product photos">
+            {images.map((src, i) => (
+              <button role="tab" aria-selected={i === 0 ? 'true' : 'false'} aria-label={`Photo ${i + 1}`} data-thumb={i}
+                class="overflow-hidden rounded-md border border-transparent bg-mist aria-selected:border-ink">
+                <img src={src} alt="" loading="lazy" class="aspect-[4/5] w-full object-cover" />
+              </button>
+            ))}
+          </div>
+          <div class="relative">
+            <div class="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto lg:mx-0 lg:overflow-hidden lg:rounded-md" data-slides>
+              {images.map((src, i) => (
+                <div class="w-full shrink-0 snap-center bg-mist" data-slide={i}>
+                  <img src={src} alt={i === 0 ? title : `${title}, photo ${i + 1}`} loading={i === 0 ? 'eager' : 'lazy'} fetchpriority={i === 0 ? 'high' : undefined} class="aspect-[4/5] w-full object-cover" />
+                </div>
+              ))}
+            </div>
+            <button data-zoom class="absolute bottom-4 right-4 grid h-11 w-11 place-items-center rounded-full bg-white shadow-sm transition-colors hover:bg-ink hover:text-white" aria-label="Enlarge photo"><Icon name="zoom" /></button>
+            {images.length > 1 && (
+              <div class="mt-3 flex justify-center gap-1.5 lg:hidden" aria-hidden="true">
+                {images.map((_, i) => <span data-dot={i} class:list={['h-1.5 rounded-full transition-all', i === 0 ? 'w-5 bg-ink' : 'w-1.5 bg-line']}></span>)}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <!-- Buy box -->
+      <div class="lg:col-span-5">
+        <div class="lg:sticky lg:top-24">
+          {(badge || onSale) && (
+            <p class="mb-4 inline-block rounded bg-mist px-2.5 py-1 text-[12px] font-medium">{onSale && !badge ? 'On sale' : badge}</p>
+          )}
+          <h1 class="font-display text-[2.25rem] font-medium leading-[1.05] md:text-[3rem]">{title}</h1>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <p class="text-[1.625rem] font-medium tabular-nums">{naira(price)}</p>
+            {onSale && <s class="text-lg text-stone tabular-nums">{naira(compare_at_price!)}</s>}
+            {onSale && <span class="rounded bg-ink px-2 py-1 text-[12px] font-medium text-white">{percentOff(product)}% OFF</span>}
+          </div>
+          {summary && <p class="mt-4 max-w-[46ch] text-[16px] leading-relaxed text-ink/80">{summary}</p>}
+
+          <form id="add-form" class="mt-6 border-t border-line pt-6" data-slug={product.id} data-default-size={defaultSize ?? ''}>
+            {!oneSize && (
+              <fieldset>
+                <div class="mb-3 flex items-center justify-between">
+                  <legend class="text-[15px]">Size: <span class="font-medium" data-size-label>Select a size</span></legend>
+                  <a href="#info" data-open-tab="fit" class="inline-flex items-center gap-1.5 text-[14px] underline underline-offset-4 hover:text-plum"><Icon name="ruler" class="h-4 w-4" /> Size guide</a>
+                </div>
+                <div class="flex flex-wrap gap-2.5">
+                  {sizes.map((s) => (
+                    <label class:list={['relative', !s.in_stock && 'cursor-not-allowed']}>
+                      <input type="radio" name="size" value={s.size} disabled={!s.in_stock} class="peer sr-only" />
+                      <span class:list={[
+                        'flex h-12 min-w-[60px] items-center justify-center rounded-md border px-4 text-[15px] transition-colors',
+                        s.in_stock
+                          ? 'cursor-pointer border-line hover:border-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-plum'
+                          : 'border-line bg-mist text-stone/60 line-through',
+                      ]}>{s.size}</span>
+                      {!s.in_stock && <span class="sr-only"> (sold out)</span>}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            {oneSize && sizes.length > 0 && <p class="text-[15px]">Size: <span class="font-medium">One size</span></p>}
+
+            <button type="submit" class="btn mt-6 w-full" disabled={soldOut} data-add>
+              <Icon name="bag" /> <span>{soldOut ? 'Sold out' : 'Add to bag'}</span>
+            </button>
+            <p class="mt-3 min-h-5 text-sm text-plum" role="status" aria-live="polite" data-status></p>
+          </form>
+
+          <ul class="mt-3 grid gap-3 border-y border-line py-5 text-[14px] leading-snug text-ink/80 sm:grid-cols-3 sm:text-[12px]">
+            <li class="flex items-center gap-2.5 sm:items-start"><Icon name="truck" class="h-5 w-5 shrink-0" />{home.trust.delivery}</li>
+            <li class="flex items-center gap-2.5 sm:items-start"><Icon name="refresh" class="h-5 w-5 shrink-0" />{home.trust.returns}</li>
+            <li class="flex items-center gap-2.5 sm:items-start"><Icon name="lock" class="h-5 w-5 shrink-0" />{home.trust.payment}</li>
+          </ul>
+          <a href={wa} class="mt-4 inline-flex items-center gap-2 text-[14px] hover:text-plum"><Icon name="chat" class="h-4 w-4" /> Not sure about your size? Chat with us on WhatsApp</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Details tabs -->
+    <section id="info" class="mt-14 grid md:mt-20 scroll-mt-28 gap-10 lg:grid-cols-2 lg:gap-12">
+      <div>
+        <div role="tablist" aria-label="Product information" class="no-scrollbar flex gap-8 overflow-x-auto border-b border-line" data-info-tabs>
+          <button role="tab" id="tab-details" aria-controls="panel-details" aria-selected="true" data-tab="details" class={tabBtn}>Details</button>
+          {size_fit && <button role="tab" id="tab-fit" aria-controls="panel-fit" aria-selected="false" data-tab="fit" class={tabBtn}>Size & fit</button>}
+          <button role="tab" id="tab-delivery" aria-controls="panel-delivery" aria-selected="false" data-tab="delivery" class={tabBtn}>Delivery & returns</button>
+        </div>
+        <div id="panel-details" role="tabpanel" aria-labelledby="tab-details" data-panel="details" class="prose-product pt-6 text-[16px] text-ink/85"><Content /></div>
+        {size_fit && <div id="panel-fit" role="tabpanel" aria-labelledby="tab-fit" data-panel="fit" hidden class="prose-product pt-6 text-[16px] text-ink/85" set:html={md(size_fit)} />}
+        <div id="panel-delivery" role="tabpanel" aria-labelledby="tab-delivery" data-panel="delivery" hidden class="prose-product pt-6 text-[16px] text-ink/85" set:html={md(home.delivery_returns)} />
+      </div>
+      <div class="overflow-hidden rounded-md bg-mist">
+        <img src={detailImage} alt="" loading="lazy" class="aspect-[16/10] h-full w-full object-cover" />
+      </div>
+    </section>
+
+    {related.length > 0 && (
+      <section class="mt-20">
+        <div class="mb-7 flex items-baseline justify-between">
+          <h2 class="section-title normal-case tracking-normal">You may also like</h2>
+          <a href={`/shop/${slugify(category)}/`} class="inline-flex items-center gap-1.5 text-[14px] hover:text-plum">View all <Icon name="arrow" class="h-4 w-4" /></a>
+        </div>
+        <ul class="grid grid-cols-2 gap-x-3 gap-y-9 md:grid-cols-4 md:gap-x-5">
+          {related.map((p) => <li><ProductCard product={p} /></li>)}
+        </ul>
+      </section>
+    )}
+  </div>
+
+  <!-- Sticky add-to-bag on mobile -->
+  {!soldOut && <div class="h-16 lg:hidden" aria-hidden="true"></div>}
+  {!soldOut && (
+    <div class="fixed inset-x-0 bottom-0 z-30 translate-y-full border-t border-line bg-white px-4 py-3 transition-transform duration-200 lg:hidden" data-sticky-bar style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
+      <div class="flex items-center gap-3">
+        <div class="min-w-0 flex-1 text-sm"><p class="truncate font-display text-[17px] font-medium">{title}</p><p class="font-medium tabular-nums">{naira(price)}</p></div>
+        <button class="btn min-h-11 px-5" data-sticky-add>Add to bag</button>
+      </div>
+    </div>
+  )}
+
+  <!-- Photo lightbox -->
+  <dialog id="zoom" class="sheet h-dvh max-h-dvh bg-white" aria-label="Enlarged photo">
+    <button data-close class="fixed right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white shadow" aria-label="Close"><Icon name="close" class="h-6 w-6" /></button>
+    <img alt={title} class="mx-auto h-full max-w-full object-contain" data-zoom-img />
+  </dialog>
+</Base>
+
+<script>
+  import { add } from '../../scripts/cart';
+
+  // Gallery: thumbnails, swipe dots, zoom
+  const slides = document.querySelector<HTMLElement>('[data-slides]')!;
+  const thumbs = document.querySelectorAll<HTMLButtonElement>('[data-thumb]');
+  const dots = document.querySelectorAll<HTMLElement>('[data-dot]');
+  let current = 0;
+  const show = (i: number) => {
+    current = i;
+    slides.scrollTo({ left: slides.clientWidth * i, behavior: 'smooth' });
+    thumbs.forEach((t, j) => t.setAttribute('aria-selected', String(i === j)));
+  };
+  thumbs.forEach((t) => t.addEventListener('click', () => show(Number(t.dataset.thumb))));
+  slides.addEventListener('scroll', () => {
+    const i = Math.round(slides.scrollLeft / slides.clientWidth);
+    if (i === current && dots.length) { /* keep */ }
+    current = i;
+    dots.forEach((d, j) => { d.classList.toggle('w-5', j === i); d.classList.toggle('bg-ink', j === i); d.classList.toggle('w-1.5', j !== i); d.classList.toggle('bg-line', j !== i); });
+    thumbs.forEach((t, j) => t.setAttribute('aria-selected', String(i === j)));
+  }, { passive: true });
+  const zoom = document.getElementById('zoom') as HTMLDialogElement;
+  document.querySelector('[data-zoom]')!.addEventListener('click', () => {
+    const img = slides.querySelectorAll('img')[current] as HTMLImageElement;
+    (zoom.querySelector('[data-zoom-img]') as HTMLImageElement).src = img.src;
+    zoom.showModal();
+  });
+
+  // Info tabs
+  const infoTabs = document.querySelectorAll<HTMLButtonElement>('[data-info-tabs] [role=tab]');
+  const selectTab = (name: string) => {
+    infoTabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+    document.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => (p.hidden = p.dataset.panel !== name));
+  };
+  infoTabs.forEach((t) => t.addEventListener('click', () => selectTab(t.dataset.tab!)));
+  document.querySelectorAll<HTMLElement>('[data-open-tab]').forEach((a) =>
+    a.addEventListener('click', () => { if (document.querySelector(`[data-panel="${a.dataset.openTab}"]`)) selectTab(a.dataset.openTab!); else selectTab('details'); }));
+
+  // Add to bag
+  const form = document.getElementById('add-form') as HTMLFormElement;
+  const button = form.querySelector<HTMLButtonElement>('[data-add]')!;
+  const status = form.querySelector<HTMLElement>('[data-status]')!;
+  const sizeLabel = form.querySelector<HTMLElement>('[data-size-label]');
+  const hasSizes = Boolean(form.querySelector('input[name=size]'));
+  const selected = () =>
+    form.dataset.defaultSize || (form.querySelector<HTMLInputElement>('input[name=size]:checked')?.value ?? '');
+
+  form.addEventListener('change', () => {
+    if (sizeLabel) sizeLabel.textContent = selected() || 'Select a size';
+    status.textContent = '';
+  });
+  const addToBag = () => {
+    const size = selected();
+    if (hasSizes && !size) {
+      status.textContent = 'Select a size to continue.';
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      form.querySelector<HTMLInputElement>('input[name=size]:not(:disabled)')?.focus();
+      return;
+    }
+    add(form.dataset.slug!, size);
+  };
+  form.addEventListener('submit', (e) => { e.preventDefault(); addToBag(); });
+
+  // Sticky bar appears once the main button scrolls out of view
+  const bar = document.querySelector<HTMLElement>('[data-sticky-bar]');
+  if (bar) {
+    new IntersectionObserver(([entry]) => {
+      const past = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+      bar.classList.toggle('translate-y-full', !past);
+    }).observe(button);
+    bar.querySelector('[data-sticky-add]')!.addEventListener('click', addToBag);
+  }
+</script>

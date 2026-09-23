@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #000000;
+  --color-plum: #81017e;       /* from the POMS mark */
+  --color-plum-deep: #5c015a;
+  --color-mist: #f3f3f2;       /* image wells, quiet panels */
+  --color-stone: #6f6f6f;      /* secondary text */
+  --color-line: #e3e3e1;
+  --font-sans: "Jost", "Futura", "Century Gothic", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
+}
+
+html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+body { background: #fff; color: #000; font-family: var(--font-sans); font-size: 16px; }
+:focus-visible { outline: 2px solid var(--color-plum); outline-offset: 3px; }
+
+/* Display headings: wide, light uppercase, as in the reference */
+.display { font-family: var(--font-display); font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; line-height: 0.98; }
+.section-title { font-family: var(--font-display); font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; font-size: clamp(1.75rem, 3vw, 2.25rem); line-height: 1.1; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .625rem;
+  min-height: 3.25rem; padding: 0 2rem; border-radius: 6px;
+  background: #000; color: #fff; font-size: .9375rem; font-weight: 500; letter-spacing: .02em;
+  transition: background-color .15s, color .15s;
+}
+.btn:hover { background: var(--color-plum); }
+.btn:disabled { opacity: .4; cursor: not-allowed; background: #000; }
+.btn-light { background: #fff; color: #000; }
+.btn-light:hover { background: #000; color: #fff; }
+.btn-outline { background: transparent; color: #000; box-shadow: inset 0 0 0 1px #000; }
+.btn-outline:hover { background: #000; color: #fff; }
+
+.field { display: block; width: 100%; border: 1px solid var(--color-line); border-radius: 6px; padding: .8rem .9rem; font-size: 1rem; background: #fff; }
+.field:focus { outline: none; border-color: #000; box-shadow: 0 0 0 1px #000; }
+
+.prose-product p { margin-bottom: 1em; line-height: 1.7; }
+.prose-product ul { padding-left: 0; margin-bottom: 1em; line-height: 1.7; }
+.prose-product ul li { position: relative; padding-left: 1.5rem; margin-bottom: .35rem; }
+.prose-product ul li::before { content: ""; position: absolute; left: .25rem; top: .7em; width: .4rem; height: .4rem; border-radius: 50%; background: var(--color-plum); }
+
+/* Drawers and overlays built on <dialog> */
+dialog.drawer { margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(420px, 100vw); max-width: 100vw; padding: 0; border: 0; }
+dialog.drawer-left { margin: 0 auto 0 0; }
+dialog.sheet { margin: 0; width: 100vw; max-width: 100vw; padding: 0; border: 0; }
+dialog::backdrop { background: rgb(0 0 0 / .45); }
+dialog.drawer[open] { animation: slide-in .25s ease-out; }
+dialog.drawer-left[open] { animation: slide-in-left .25s ease-out; }
+dialog.sheet[open] { animation: drop-in .2s ease-out; }
+@keyframes slide-in { from { transform: translateX(100%); } }
+@keyframes slide-in-left { from { transform: translateX(-100%); } }
+@keyframes drop-in { from { transform: translateY(-16px); opacity: 0; } }
+body:has(dialog[open]) { overflow: hidden; }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+.logo svg { display: block; width: 100%; height: auto; }
+
+/* Print strip: a woven-diamond band, used once above the footer */
+.print-strip { height: 18px; background: #000 url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2736%27%20height%3D%2718%27%20viewBox%3D%270%200%2036%2018%27%3E%3Crect%20width%3D%2736%27%20height%3D%2718%27%20fill%3D%27%23000%27/%3E%3Cpath%20d%3D%27M18%201%20L27%209%20L18%2017%20L9%209%20Z%27%20fill%3D%27%2381017e%27/%3E%3Cpath%20d%3D%27M18%205%20L22.5%209%20L18%2013%20L13.5%209%20Z%27%20fill%3D%27%23e8a33a%27/%3E%3Ccircle%20cx%3D%2718%27%20cy%3D%279%27%20r%3D%271.4%27%20fill%3D%27%23000%27/%3E%3Cpath%20d%3D%27M0%201%20L4.5%209%20L0%2017%20Z%20M36%201%20L31.5%209%20L36%2017%20Z%27%20fill%3D%27%23e8a33a%27/%3E%3Ccircle%20cx%3D%274%27%20cy%3D%272.5%27%20r%3D%271%27%20fill%3D%27%23fff%27/%3E%3Ccircle%20cx%3D%274%27%20cy%3D%2715.5%27%20r%3D%271%27%20fill%3D%27%23fff%27/%3E%3Ccircle%20cx%3D%2732%27%20cy%3D%272.5%27%20r%3D%271%27%20fill%3D%27%23fff%27/%3E%3Ccircle%20cx%3D%2732%27%20cy%3D%2715.5%27%20r%3D%271%27%20fill%3D%27%23fff%27/%3E%3C/svg%3E") repeat-x left center / 36px 18px; }

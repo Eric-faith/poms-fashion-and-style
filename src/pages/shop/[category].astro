@@ -1,0 +1,13 @@
+---
+import ShopPage from '../../components/ShopPage.astro';
+import { getProducts, getCategories, slugify } from '../../lib/shop';
+
+export async function getStaticPaths() {
+  const categories = await getCategories();
+  return categories.map((c) => ({ params: { category: c.slug }, props: { name: c.name } }));
+}
+const { name } = Astro.props;
+const { category } = Astro.params;
+const products = (await getProducts()).filter((p) => slugify(p.data.category) === category);
+---
+<ShopPage heading={name} products={products} active={category} />

@@ -1,0 +1,253 @@
+---
+import '../styles/global.css';
+import Icon from '../components/Icon.astro';
+import wordmark from '../icons/wordmark.svg?raw';
+import { getCategories, home, deliveryFee, freeDeliveryOver } from '../lib/shop';
+
+interface Props { title?: string; description?: string; image?: string }
+const {
+  title,
+  description = 'POMS Fashion & Style. African print dresses, sets and separates, delivered across Nigeria. Pay securely by card, bank transfer or USSD.',
+  image,
+} = Astro.props;
+const fullTitle = title ? `${title} | POMS Fashion` : 'POMS Fashion & Style';
+const categories = await getCategories();
+const path = Astro.url.pathname;
+const navLink = 'relative py-2 transition-colors hover:text-plum';
+const isActive = (href: string) => path === href;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{fullTitle}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={new URL(path, Astro.site)} />
+  <meta property="og:title" content={fullTitle} />
+  <meta property="og:description" content={description} />
+  {image && <meta property="og:image" content={new URL(image, Astro.site)} />}
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <!-- Handles the invite / password-reset links Netlify Identity emails to the store owner -->
+  <script is:inline src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script is:inline>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on('init', (user) => {
+        if (!user) window.netlifyIdentity.on('login', () => { document.location.href = '/admin/'; });
+      });
+    }
+  </script>
+</head>
+<body class="flex min-h-dvh flex-col" data-delivery-fee={deliveryFee} data-free-over={freeDeliveryOver}>
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2">Skip to content</a>
+
+  {home.announcement && (
+    <div class="bg-ink px-4 py-2.5 text-center text-[13px] tracking-wide text-white">{home.announcement}</div>
+  )}
+
+  <header class="sticky top-0 z-40 border-b border-line bg-white">
+    <div class="mx-auto grid h-[72px] max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center px-4 md:px-8">
+      <div class="flex items-center gap-1 lg:gap-7">
+        <button class="-ml-2 p-2 lg:hidden" data-open="menu" aria-label="Open menu"><Icon name="menu" class="h-6 w-6" /></button>
+        <button class="p-2 lg:hidden" data-open="search" aria-label="Search"><Icon name="search" /></button>
+        <nav aria-label="Main" class="hidden items-center gap-7 text-[14px] lg:flex">
+          <a href="/shop/" class:list={[navLink, isActive('/shop/') && 'text-plum']}>New in</a>
+          {categories.slice(0, 3).map((c) => (
+            <a href={`/shop/${c.slug}/`} class:list={[navLink, isActive(`/shop/${c.slug}/`) && 'text-plum']}>{c.name}</a>
+          ))}
+          <a href="/shop/sale/" class:list={[navLink, 'text-plum']}>Sale</a>
+        </nav>
+      </div>
+
+      <a href="/" class="logo block w-[112px] text-ink md:w-[132px]" aria-label="POMS Fashion & Style, home" set:html={wordmark} />
+
+      <div class="flex items-center justify-end gap-1 md:gap-3">
+        <button class="hidden p-2 transition-colors hover:text-plum lg:block" data-open="search" aria-label="Search"><Icon name="search" /></button>
+        <a href="/bag/" class="relative -mr-2 p-2 transition-colors hover:text-plum" data-open="cart" aria-label="Bag">
+          <Icon name="bag" class="h-6 w-6" />
+          <span data-bag-count class="absolute right-0.5 top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-plum px-1 text-[11px] font-medium leading-none text-white">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="flex-1"><slot /></main>
+
+  <div class="print-strip mt-24" aria-hidden="true"></div>
+  <footer class="bg-ink text-white">
+    <div class="mx-auto grid max-w-[1440px] gap-12 px-5 py-16 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:px-8">
+      <div>
+        <a href="/" class="logo block w-[180px] text-white" aria-label="POMS Fashion & Style, home" set:html={wordmark} />
+        <p class="mt-6 max-w-xs text-sm leading-relaxed text-white/65">African print dresses, sets and separates for women who dress with intention.</p>
+      </div>
+      <nav aria-label="Shop" class="flex flex-col gap-3 text-sm">
+        <p class="mb-1 text-xs uppercase tracking-[0.14em] text-white/50">Shop</p>
+        <a href="/shop/" class="hover:text-white/70">New in</a>
+        {categories.map((c) => <a href={`/shop/${c.slug}/`} class="hover:text-white/70">{c.name}</a>)}
+        <a href="/shop/sale/" class="hover:text-white/70">Sale</a>
+      </nav>
+      <nav aria-label="Help" class="flex flex-col gap-3 text-sm">
+        <p class="mb-1 text-xs uppercase tracking-[0.14em] text-white/50">Help</p>
+        <a href="/delivery-returns/" class="hover:text-white/70">Delivery and returns</a>
+        <a href={`https://wa.me/${home.contact.whatsapp}`} class="hover:text-white/70">WhatsApp us</a>
+        <a href={`mailto:${home.contact.email}`} class="hover:text-white/70">{home.contact.email}</a>
+      </nav>
+      <div class="flex flex-col gap-3 text-sm">
+        <p class="mb-1 text-xs uppercase tracking-[0.14em] text-white/50">Follow</p>
+        <a href={home.contact.instagram} class="hover:text-white/70">Instagram</a>
+      </div>
+    </div>
+    <div class="mx-auto flex max-w-[1440px] flex-wrap justify-between gap-3 border-t border-white/15 px-5 py-6 text-xs text-white/55 md:px-8">
+      <p>© {new Date().getFullYear()} POMS Fashion & Style</p>
+      <p class="flex items-center gap-2"><Icon name="lock" class="h-3.5 w-3.5" /> Payments secured by Paystack and Flutterwave</p>
+    </div>
+  </footer>
+
+  <!-- Mobile menu -->
+  <dialog id="menu" class="drawer drawer-left" aria-label="Menu">
+    <div class="flex h-full flex-col">
+      <div class="flex items-center justify-between border-b border-line px-5 py-4">
+        <span class="logo block w-[104px]" set:html={wordmark} />
+        <button data-close class="-mr-2 p-2" aria-label="Close menu"><Icon name="close" class="h-6 w-6" /></button>
+      </div>
+      <nav class="flex flex-col px-5 py-2 font-display text-[1.75rem] font-medium" aria-label="Mobile">
+        <a href="/shop/" class="border-b border-line py-4">New in</a>
+        {categories.map((c) => <a href={`/shop/${c.slug}/`} class="border-b border-line py-4">{c.name}</a>)}
+        <a href="/shop/sale/" class="border-b border-line py-4 text-plum">Sale</a>
+      </nav>
+      <div class="mt-auto space-y-3 bg-mist px-5 py-6 text-sm">
+        <a href="/delivery-returns/" class="block">Delivery and returns</a>
+        <a href={`https://wa.me/${home.contact.whatsapp}`} class="flex items-center gap-2"><Icon name="chat" class="h-4 w-4" /> Questions? WhatsApp us</a>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Search -->
+  <dialog id="search" class="sheet" aria-label="Search">
+    <div class="mx-auto max-w-[1100px] px-5 py-6 md:px-8">
+      <div class="flex items-center gap-3 border-b border-ink pb-3">
+        <Icon name="search" class="h-5 w-5 shrink-0" />
+        <input type="search" class="flex-1 bg-transparent text-lg outline-none placeholder:text-stone" placeholder="Search dresses, sets, tops…" aria-label="Search products" data-search-input autocomplete="off" />
+        <button data-close class="-mr-2 p-2" aria-label="Close search"><Icon name="close" class="h-6 w-6" /></button>
+      </div>
+      <div data-search-results class="py-6 text-sm text-stone"></div>
+    </div>
+  </dialog>
+
+  <!-- Bag drawer -->
+  <dialog id="cart" class="drawer" aria-label="Your bag">
+    <div class="flex h-full flex-col">
+      <div class="flex items-center justify-between border-b border-line px-5 py-4">
+        <p class="text-lg font-medium">Your bag (<span data-bag-count>0</span>)</p>
+        <button data-close class="-mr-2 p-2" aria-label="Close bag"><Icon name="close" class="h-6 w-6" /></button>
+      </div>
+      <div data-cart-body class="flex flex-1 flex-col overflow-hidden"></div>
+    </div>
+  </dialog>
+
+  <script>
+    import { updateCount, resolved, setQty, naira, esc, loadCatalog, deliveryFor, freeOver } from '../scripts/cart';
+    updateCount();
+    window.addEventListener('storage', updateCount);
+
+    const dialogs = {
+      menu: document.getElementById('menu') as HTMLDialogElement,
+      search: document.getElementById('search') as HTMLDialogElement,
+      cart: document.getElementById('cart') as HTMLDialogElement,
+    };
+    const open = (name: keyof typeof dialogs) => {
+      Object.values(dialogs).forEach((d) => d.open && d.close());
+      dialogs[name].showModal();
+      if (name === 'cart') renderCart();
+      if (name === 'search') { searchInput.focus(); renderSearch(); }
+    };
+    document.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      const opener = t.closest<HTMLElement>('[data-open]');
+      if (opener) {
+        if (opener.dataset.open === 'cart' && location.pathname === '/bag/') return; // already on bag page
+        e.preventDefault(); open(opener.dataset.open as keyof typeof dialogs); return;
+      }
+      if (t.closest('[data-close]')) t.closest('dialog')?.close();
+      if (t instanceof HTMLDialogElement) t.close(); // click on backdrop
+    });
+    window.addEventListener('bag:open', () => open('cart'));
+
+    // --- Bag drawer ---
+    const cartBody = document.querySelector<HTMLElement>('[data-cart-body]')!;
+    async function renderCart() {
+      const lines = await resolved();
+      if (!lines.length) {
+        cartBody.innerHTML = `
+          <div class="flex flex-1 flex-col items-center justify-center px-8 text-center">
+            <p class="text-xl">Your bag is empty</p>
+            <p class="mt-2 text-sm text-stone">Pieces you add will appear here.</p>
+            <a href="/shop/" class="btn mt-6">Shop new in</a>
+          </div>`;
+        return;
+      }
+      const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
+      const threshold = freeOver();
+      const left = threshold - subtotal;
+      const progress = threshold
+        ? `<div class="border-b border-line px-5 py-4 text-sm">
+             <p>${left > 0 ? `You're <strong>${naira(left)}</strong> away from free delivery` : 'Your order qualifies for free delivery'}</p>
+             <div class="mt-2 h-1 rounded-full bg-mist"><div class="h-1 rounded-full bg-plum" style="width:${Math.min(100, (subtotal / threshold) * 100)}%"></div></div>
+           </div>` : '';
+      cartBody.innerHTML = `
+        ${progress}
+        <ul class="flex-1 overflow-y-auto px-5">
+          ${lines.map((l) => `
+            <li class="flex gap-4 border-b border-line py-4">
+              <a href="/products/${esc(l.slug)}/" class="w-20 shrink-0 overflow-hidden rounded bg-mist"><img src="${esc(l.product.image)}" alt="" class="aspect-[4/5] w-full object-cover" /></a>
+              <div class="flex flex-1 flex-col text-sm">
+                <div class="flex justify-between gap-3"><a href="/products/${esc(l.slug)}/" class="font-medium">${esc(l.product.title)}</a><span class="tabular-nums">${naira(l.product.price * l.qty)}</span></div>
+                ${l.size ? `<p class="mt-0.5 text-stone">Size ${esc(l.size)}</p>` : ''}
+                <div class="mt-auto flex items-center justify-between pt-3">
+                  <div class="flex items-center rounded border border-line">
+                    <button class="h-8 w-8" data-qty="${l.qty - 1}" data-slug="${esc(l.slug)}" data-size="${esc(l.size)}" aria-label="Decrease quantity">−</button>
+                    <span class="w-6 text-center tabular-nums">${l.qty}</span>
+                    <button class="h-8 w-8 disabled:opacity-40" data-qty="${l.qty + 1}" data-slug="${esc(l.slug)}" data-size="${esc(l.size)}" aria-label="Increase quantity" ${l.qty >= 10 ? 'disabled' : ''}>+</button>
+                  </div>
+                  <button class="text-stone underline underline-offset-4 hover:text-ink" data-qty="0" data-slug="${esc(l.slug)}" data-size="${esc(l.size)}">Remove</button>
+                </div>
+              </div>
+            </li>`).join('')}
+        </ul>
+        <div class="border-t border-line px-5 py-5">
+          <div class="flex justify-between text-sm"><span>Subtotal</span><span class="tabular-nums">${naira(subtotal)}</span></div>
+          <div class="mt-1 flex justify-between text-sm text-stone"><span>Delivery</span><span class="tabular-nums">${deliveryFor(subtotal) ? naira(deliveryFor(subtotal)) : 'Free'}</span></div>
+          <a href="/checkout/" class="btn mt-4 w-full">Check out · ${naira(subtotal + deliveryFor(subtotal))}</a>
+          <a href="/bag/" class="mt-3 block text-center text-sm underline underline-offset-4">View bag</a>
+        </div>`;
+    }
+    cartBody.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-qty]');
+      if (b) setQty(b.dataset.slug!, b.dataset.size!, Number(b.dataset.qty));
+    });
+    window.addEventListener('bag:change', () => { if (dialogs.cart.open) renderCart(); });
+
+    // --- Search ---
+    const searchInput = document.querySelector<HTMLInputElement>('[data-search-input]')!;
+    const searchResults = document.querySelector<HTMLElement>('[data-search-results]')!;
+    async function renderSearch() {
+      const q = searchInput.value.trim().toLowerCase();
+      const items = await loadCatalog();
+      const hits = q ? items.filter((p) => `${p.title} ${p.category}`.toLowerCase().includes(q)) : items.slice(0, 4);
+      if (!hits.length) { searchResults.innerHTML = `No pieces match “${esc(searchInput.value)}”. Try a category like dresses or sets.`; return; }
+      searchResults.innerHTML = `
+        <p class="mb-4">${q ? `${hits.length} ${hits.length === 1 ? 'result' : 'results'}` : 'New in'}</p>
+        <ul class="grid grid-cols-2 gap-4 md:grid-cols-4">${hits.slice(0, 8).map((p) => `
+          <li><a href="/products/${esc(p.slug)}/" class="group block text-ink">
+            <div class="overflow-hidden rounded bg-mist"><img src="${esc(p.image)}" alt="" class="aspect-[4/5] w-full object-cover" /></div>
+            <p class="mt-2 group-hover:underline">${esc(p.title)}</p><p class="text-stone">${naira(p.price)}</p></a></li>`).join('')}
+        </ul>`;
+    }
+    searchInput.addEventListener('input', renderSearch);
+  </script>
+</body>
+</html>

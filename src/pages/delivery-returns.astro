@@ -1,0 +1,12 @@
+---
+import Base from '../layouts/Base.astro';
+import { home } from '../lib/shop';
+import { md } from '../lib/md';
+---
+<Base title="Delivery and returns">
+  <article class="mx-auto max-w-[680px] px-5 pt-14 md:px-8">
+    <h1 class="display text-4xl md:text-5xl">Delivery and returns</h1>
+    <div class="prose-product mt-10 text-[17px]" set:html={md(home.delivery_returns)} />
+    <p class="mt-8 text-[15px]">Questions? <a href={`https://wa.me/${home.contact.whatsapp}`} class="underline underline-offset-4 hover:text-plum">Chat with us on WhatsApp</a>.</p>
+  </article>
+</Base>

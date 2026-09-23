@@ -1,0 +1,17 @@
+---
+import ProductCard from './ProductCard.astro';
+import type { Product } from '../lib/shop';
+interface Props { products: Product[]; cols?: string }
+const { products, cols = 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' } = Astro.props;
+---
+{products.length === 0 ? (
+  <div class="py-24 text-center">
+    <p class="text-2xl">Nothing here yet</p>
+    <p class="mt-3 text-stone">New pieces are on the way. Browse the rest of the shop in the meantime.</p>
+    <a href="/shop/" class="btn mt-8">Shop new in</a>
+  </div>
+) : (
+  <ul class:list={['grid gap-x-3 gap-y-9 md:gap-x-5', cols]} data-grid>
+    {products.map((p, i) => <li><ProductCard product={p} eager={i < 4} /></li>)}
+  </ul>
+)}

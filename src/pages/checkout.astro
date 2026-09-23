@@ -1,0 +1,140 @@
+---
+import Base from '../layouts/Base.astro';
+const providers = String(import.meta.env.PUBLIC_PAYMENT_PROVIDERS ?? 'paystack')
+  .split(',').map((s) => s.trim().toLowerCase()).filter((s) => s === 'paystack' || s === 'flutterwave');
+const labels: Record<string, string> = { paystack: 'Paystack', flutterwave: 'Flutterwave' };
+const states = ['Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT (Abuja)','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara'];
+---
+<Base title="Checkout">
+  <div class="mx-auto max-w-[1100px] px-5 pt-10 md:px-10 md:pt-14">
+    <h1 class="display text-5xl md:text-6xl">Checkout</h1>
+
+    <details class="group mt-6 rounded-md bg-mist md:hidden" data-mobile-summary>
+      <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-4 text-[15px]">
+        <span class="flex items-center gap-2">Order summary <svg class="h-4 w-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
+        <span class="font-medium tabular-nums" data-total></span>
+      </summary>
+      <div class="px-4 pb-5 text-sm" data-summary-body></div>
+    </details>
+
+    <div class="mt-8 grid gap-12 md:mt-10 md:grid-cols-[1fr_340px]">
+      <form id="checkout" class="space-y-8" novalidate>
+        <fieldset class="grid gap-4 sm:grid-cols-2">
+          <legend class="mb-4 text-lg font-semibold">Contact</legend>
+          <label class="sm:col-span-2"><span class="mb-1.5 block text-sm">Full name</span>
+            <input class="field" name="name" autocomplete="name" required /></label>
+          <label><span class="mb-1.5 block text-sm">Email</span>
+            <input class="field" type="email" name="email" autocomplete="email" required /></label>
+          <label><span class="mb-1.5 block text-sm">Phone number</span>
+            <input class="field" type="tel" name="phone" autocomplete="tel" placeholder="0803 000 0000" required /></label>
+        </fieldset>
+
+        <fieldset class="grid gap-4 sm:grid-cols-2">
+          <legend class="mb-4 text-lg font-semibold">Delivery address</legend>
+          <label class="sm:col-span-2"><span class="mb-1.5 block text-sm">Street address</span>
+            <input class="field" name="address" autocomplete="street-address" required /></label>
+          <label><span class="mb-1.5 block text-sm">City or area</span>
+            <input class="field" name="city" autocomplete="address-level2" required /></label>
+          <label><span class="mb-1.5 block text-sm">State</span>
+            <select class="field" name="state" autocomplete="address-level1" required>
+              <option value="">Select state</option>
+              {states.map((s) => <option value={s} selected={s === 'Lagos'}>{s}</option>)}
+            </select></label>
+          <label class="sm:col-span-2"><span class="mb-1.5 block text-sm">Delivery note <span class="text-stone">(optional)</span></span>
+            <input class="field" name="note" placeholder="Landmark, gate code, best time to call" /></label>
+        </fieldset>
+
+        {providers.length > 1 ? (
+          <fieldset>
+            <legend class="mb-4 text-lg font-semibold">Pay with</legend>
+            <div class="grid gap-3 sm:grid-cols-2">
+              {providers.map((p, i) => (
+                <label class="flex cursor-pointer items-center gap-3 border border-line p-4 rounded-md has-[:checked]:border-ink has-[:checked]:bg-mist">
+                  <input type="radio" name="provider" value={p} checked={i === 0} class="accent-black" />
+                  <span><span class="block font-medium">{labels[p]}</span><span class="text-sm text-stone">Card, bank transfer or USSD</span></span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : (
+          <input type="hidden" name="provider" value={providers[0] ?? 'paystack'} />
+        )}
+
+        <div>
+          <button type="submit" class="btn w-full" data-pay>Pay securely</button>
+          <p class="mt-3 min-h-6 text-sm text-red-700" role="alert" data-error></p>
+          <p class="text-sm text-stone">You’ll finish payment on {providers.map((p) => labels[p]).join(' or ')}’s secure page, then come back here.</p>
+        </div>
+      </form>
+
+      <aside class="hidden h-fit rounded-md bg-mist p-6 md:sticky md:top-24 md:block" aria-label="Order summary">
+        <h2 class="mb-4 font-semibold">Order summary</h2>
+        <div id="summary" class="text-sm text-stone" data-summary-body>Loading…</div>
+      </aside>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { resolved, read, naira, esc, deliveryFor } from '../scripts/cart';
+  const form = document.getElementById('checkout') as HTMLFormElement;
+  const payBtn = form.querySelector<HTMLButtonElement>('[data-pay]')!;
+  const errorEl = form.querySelector<HTMLElement>('[data-error]')!;
+
+  (async () => {
+    const lines = await resolved();
+    if (!lines.length) { location.replace('/bag/'); return; }
+    const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
+    const delivery = deliveryFor(subtotal);
+    payBtn.textContent = `Pay ${naira(subtotal + delivery)} securely`;
+    document.querySelectorAll('[data-total]').forEach((el) => (el.textContent = naira(subtotal + delivery)));
+    const html = `
+      <ul class="space-y-4">${lines.map((l) => `
+        <li class="flex gap-3">
+          <img src="${esc(l.product.image)}" alt="" class="aspect-[4/5] w-14 rounded bg-white object-cover" />
+          <div class="flex-1 text-black"><p>${esc(l.product.title)}</p>
+            <p class="text-stone">${l.size ? `Size ${esc(l.size)} · ` : ''}Qty ${l.qty}</p></div>
+          <p class="text-black tabular-nums">${naira(l.product.price * l.qty)}</p>
+        </li>`).join('')}</ul>
+      <dl class="mt-6 space-y-2 border-t border-black/15 pt-4 text-black">
+        <div class="flex justify-between"><dt>Subtotal</dt><dd class="tabular-nums">${naira(subtotal)}</dd></div>
+        <div class="flex justify-between"><dt>Delivery</dt><dd class="tabular-nums">${delivery ? naira(delivery) : 'Free'}</dd></div>
+        <div class="flex justify-between pt-2 text-base font-semibold"><dt>Total</dt><dd class="tabular-nums">${naira(subtotal + delivery)}</dd></div>
+      </dl>`;
+    document.querySelectorAll('[data-summary-body]').forEach((el) => (el.innerHTML = html));
+  })();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.textContent = '';
+    const invalid = [...form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[required]')].find((f) => !f.checkValidity());
+    if (invalid) {
+      const label = invalid.closest('label')?.querySelector('span')?.textContent?.trim() ?? 'This field';
+      errorEl.textContent = invalid.value ? `Check your ${label.toLowerCase()}.` : `${label} is required.`;
+      invalid.focus();
+      return;
+    }
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    const original = payBtn.textContent;
+    payBtn.disabled = true;
+    payBtn.textContent = 'Opening secure payment…';
+    try {
+      const res = await fetch('/.netlify/functions/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: data.provider,
+          items: read(),
+          customer: { name: data.name, email: data.email, phone: data.phone, address: data.address, city: data.city, state: data.state, note: data.note },
+        }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.url) throw new Error(out.error || 'Payment could not be started. Try again in a moment.');
+      location.href = out.url;
+    } catch (err) {
+      errorEl.textContent = (err as Error).message;
+      payBtn.disabled = false;
+      payBtn.textContent = original;
+    }
+  });
+</script>

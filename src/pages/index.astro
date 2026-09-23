@@ -1,0 +1,131 @@
+---
+import Base from '../layouts/Base.astro';
+import ProductCard from '../components/ProductCard.astro';
+import Icon from '../components/Icon.astro';
+import { getProducts, getCategories, naira, home } from '../lib/shop';
+
+const products = await getProducts();
+const categories = await getCategories();
+const newIn = products.slice(0, 12);
+const heroLines = home.hero.heading.split(/(?<=\.)\s+/);
+const editProducts = home.edit.products
+  .map((slug) => products.find((p) => p.id === slug))
+  .filter((p): p is NonNullable<typeof p> => Boolean(p));
+const [bigTile, ...smallTiles] = home.tiles;
+const tileText = 'absolute inset-x-0 top-0 p-5 md:p-7';
+---
+<Base image={home.hero.image}>
+  <!-- Hero -->
+  <section class="relative isolate overflow-hidden bg-mist">
+    <img src={home.hero.image} alt="" class="absolute inset-0 -z-10 h-full w-full object-cover object-[78%_center] md:object-center" fetchpriority="high" />
+    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/25 to-transparent md:bg-gradient-to-r md:from-black/55 md:via-black/20"></div>
+    <div class="mx-auto flex min-h-[calc(100svh-110px)] max-w-[1440px] flex-col justify-end px-5 pb-10 pt-24 text-white md:h-[calc(100dvh-110px)] md:max-h-[820px] md:min-h-[560px] md:justify-center md:px-8 md:py-20">
+      <h1 class="display max-w-[12ch] text-[clamp(3rem,8vw,7rem)]">
+        {heroLines.map((line) => <span class="block">{line}</span>)}
+      </h1>
+      <p class="mt-5 max-w-[38ch] text-[16px] leading-relaxed text-white/90 md:mt-6 md:text-[17px]">{home.hero.text}</p>
+      <div class="mt-7 md:mt-9">
+        <a href={home.hero.button_link} class="btn btn-light w-full sm:w-auto">{home.hero.button_label}</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- New in, with category tabs -->
+  <section class="mx-auto mt-20 max-w-[1440px] px-4 md:mt-24 md:px-8" aria-labelledby="new-in">
+    <h2 id="new-in" class="section-title text-center">New in</h2>
+    <div role="tablist" aria-label="Filter new in by category" class="no-scrollbar -mx-4 mt-6 flex justify-start gap-6 overflow-x-auto px-4 text-[14px] md:justify-center md:gap-9" data-tabs>
+      <button role="tab" aria-selected="true" data-filter="" class="shrink-0 border-b border-transparent pb-1.5 aria-selected:border-ink aria-selected:text-ink text-stone hover:text-ink">All</button>
+      {categories.map((c) => (
+        <button role="tab" aria-selected="false" data-filter={c.name} class="shrink-0 border-b border-transparent pb-1.5 text-stone hover:text-ink aria-selected:border-ink aria-selected:text-ink">{c.name}</button>
+      ))}
+    </div>
+    <ul class="no-scrollbar -mx-4 mt-8 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 md:mx-0 md:grid md:snap-none md:grid-cols-3 md:gap-x-5 md:gap-y-9 md:overflow-visible md:px-0 xl:grid-cols-6" data-new-in>
+      {newIn.map((p, i) => <li data-category={p.data.category} class:list={['w-[46%] shrink-0 snap-start md:w-auto', i >= 6 && 'hidden']}><ProductCard product={p} eager={i < 2} compact /></li>)}
+    </ul>
+    <div class="mt-10 text-center">
+      <a href="/shop/" class="btn btn-outline w-full sm:w-auto" data-view-all>View all new in</a>
+    </div>
+  </section>
+
+  <!-- Category tiles + sale -->
+  {bigTile && (
+    <section class="mx-auto mt-24 max-w-[1440px] px-4 md:px-8" aria-label="Shop by category">
+      <div class="grid grid-cols-2 gap-3 md:h-[700px] md:grid-cols-4 md:grid-rows-2 md:gap-4">
+        <a href={bigTile.link} class="group relative col-span-2 block aspect-[4/5] overflow-hidden rounded-md bg-mist md:row-span-2 md:aspect-auto">
+          <img src={bigTile.image} alt="" loading="lazy" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+          <div class={tileText}>
+            <h3 class="display text-4xl md:text-6xl">{bigTile.title}</h3>
+            {bigTile.text && <p class="mt-2 text-sm text-ink/75">{bigTile.text}</p>}
+          </div>
+          <span class="absolute bottom-5 left-5 inline-flex items-center gap-2 rounded-full bg-white/90 px-3.5 py-2 text-sm font-medium md:bottom-7 md:left-7">Shop now <Icon name="arrow" class="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+        </a>
+        {smallTiles.map((t) => (
+          <a href={t.link} class="group relative block aspect-[3/4] overflow-hidden rounded-md bg-mist md:aspect-auto">
+            <img src={t.image} alt="" loading="lazy" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+            <div class={tileText}>
+              <h3 class="display text-[1.375rem] md:text-[2rem]">{t.title}</h3>
+              {t.text && <p class="mt-1.5 hidden max-w-[20ch] text-sm text-ink/75 sm:block">{t.text}</p>}
+            </div>
+            <span class="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-[13px] font-medium md:bottom-5 md:left-5">Shop now <Icon name="arrow" class="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+          </a>
+        ))}
+        <a href="/shop/sale/" class="group relative col-span-2 block aspect-[4/3] overflow-hidden rounded-md bg-mist md:aspect-auto">
+          <img src={home.promo.image} alt="" loading="lazy" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+          <div class="absolute inset-y-0 left-0 flex w-[62%] flex-col justify-center p-5 md:w-auto md:p-8">
+            <h3 class="display max-w-[9ch] text-[2.5rem] md:text-[4rem]">{home.promo.heading}</h3>
+            {home.promo.text && <p class="mt-3 max-w-[24ch] text-sm text-ink/75">{home.promo.text}</p>}
+            <span class="btn mt-6 self-start">{home.promo.button_label}</span>
+          </div>
+        </a>
+      </div>
+    </section>
+  )}
+
+  <!-- Curated edit -->
+  {editProducts.length > 0 && (
+    <section class="mx-auto mt-24 max-w-[1440px] px-4 md:px-8" aria-labelledby="edit">
+      <h2 id="edit" class="section-title text-center">{home.edit.heading}</h2>
+      <ul class="mt-10 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        {editProducts.map((p) => (
+          <li>
+            <a href={`/products/${p.id}/`} class="group relative block aspect-[3/4] overflow-hidden rounded-md bg-mist">
+              <img src={p.data.images[0]} alt={p.data.title} loading="lazy" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+              <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-4 pt-16 text-white md:p-5 md:pt-20">
+                <p class="font-display text-xl font-medium leading-tight md:text-2xl">{p.data.title}</p>
+                <p class="mt-1 flex items-center gap-2 text-sm text-white/85">{naira(p.data.price)} <Icon name="arrow" class="h-4 w-4 transition-transform group-hover:translate-x-1" /></p>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  <!-- Reassurance -->
+  <section class="mx-auto mt-24 max-w-[1440px] px-4 md:px-8" aria-label="Why shop with us">
+    <ul class="grid grid-cols-3 gap-3 border-y border-line py-8 text-center text-[13px] md:gap-6 md:py-10 md:text-base">
+      <li class="flex flex-col items-center gap-3"><Icon name="truck" class="h-7 w-7 text-plum" /><p>{home.trust.delivery}</p></li>
+      <li class="flex flex-col items-center gap-3"><Icon name="refresh" class="h-7 w-7 text-plum" /><p>{home.trust.returns}</p></li>
+      <li class="flex flex-col items-center gap-3"><Icon name="lock" class="h-7 w-7 text-plum" /><p>{home.trust.payment}</p></li>
+    </ul>
+  </section>
+</Base>
+
+<script>
+  const tabs = document.querySelectorAll<HTMLButtonElement>('[data-tabs] [role=tab]');
+  const items = document.querySelectorAll<HTMLElement>('[data-new-in] > li');
+  const viewAll = document.querySelector<HTMLAnchorElement>('[data-view-all]')!;
+  const slug = (s: string) => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  tabs.forEach((tab) => tab.addEventListener('click', () => {
+    tabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+    const f = tab.dataset.filter!;
+    let shown = 0;
+    items.forEach((li) => {
+      const match = !f || li.dataset.category === f;
+      li.classList.toggle('hidden', !(match && shown < 6));
+      if (match) shown++;
+    });
+    viewAll.href = f ? `/shop/${slug(f)}/` : '/shop/';
+    viewAll.textContent = f ? `View all ${f.toLowerCase()}` : 'View all new in';
+  }));
+</script>

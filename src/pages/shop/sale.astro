@@ -1,0 +1,6 @@
+---
+import ShopPage from '../../components/ShopPage.astro';
+import { getProducts, isOnSale, home } from '../../lib/shop';
+const products = (await getProducts()).filter(isOnSale);
+---
+<ShopPage heading="Sale" products={products} active="sale" intro={home.promo.text} />

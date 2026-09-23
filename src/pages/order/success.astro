@@ -1,0 +1,48 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Order status">
+  <div class="mx-auto max-w-[640px] px-5 pt-16 text-center md:pt-24">
+    <div id="state" aria-live="polite">
+      <p class="text-3xl">Confirming your payment…</p>
+      <p class="mt-3 text-stone">This takes a few seconds. Please keep this page open.</p>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { clear, naira, esc } from '../../scripts/cart';
+  const state = document.getElementById('state')!;
+  const q = new URLSearchParams(location.search);
+  const provider = q.get('provider');
+  const params = new URLSearchParams({ provider: provider ?? '' });
+  if (provider === 'paystack') params.set('reference', q.get('reference') ?? q.get('trxref') ?? '');
+  if (provider === 'flutterwave') {
+    params.set('transaction_id', q.get('transaction_id') ?? '');
+    params.set('tx_ref', q.get('tx_ref') ?? '');
+  }
+
+  const failed = (msg: string) => {
+    state.innerHTML = `
+      <p class="text-3xl">Payment not completed</p>
+      <p class="mt-3 text-stone">${esc(msg)} Your bag has been kept, so you can try again.</p>
+      <a href="/checkout/" class="btn mt-8">Try payment again</a>`;
+  };
+
+  (async () => {
+    if (q.get('status') === 'cancelled') return failed('You cancelled the payment.');
+    try {
+      const res = await fetch(`/.netlify/functions/verify?${params}`);
+      const out = await res.json();
+      if (!out.paid) return failed(out.message || 'We could not confirm this payment.');
+      clear();
+      state.innerHTML = `
+        <p class="display text-4xl md:text-5xl">Thank you</p>
+        <p class="mt-4">We’ve received your payment of <strong>${naira(out.amount)}</strong>.</p>
+        <p class="mt-2 text-stone">Order reference <span class="font-medium text-black">${esc(out.reference)}</span>. A receipt has been sent to ${esc(out.email || 'your email')}, and we’ll call you to arrange delivery.</p>
+        <a href="/shop/" class="btn btn-outline mt-8">Continue shopping</a>`;
+    } catch {
+      failed('We could not reach the payment provider to confirm.');
+    }
+  })();
+</script>

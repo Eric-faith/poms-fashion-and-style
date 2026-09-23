@@ -1,0 +1,165 @@
+# Decap CMS — lets the store owner add, edit and remove products at /admin/
+# Every save is committed to the GitHub repo as a Markdown file in
+# src/content/products/, and Netlify rebuilds the site (about 1 minute).
+
+backend:
+  name: git-gateway   # login via Netlify Identity (email + password, no GitHub account needed)
+  branch: main
+
+site_url: https://pomsfashion.netlify.app     # change to the live domain
+display_url: https://pomsfashion.netlify.app
+logo_url: /favicon.svg
+
+media_folder: public/uploads   # where uploaded photos are saved in the repo
+public_folder: /uploads        # how the site references them
+
+collections:
+  - name: products
+    label: Products
+    label_singular: Product
+    description: Everything in the shop. Turn off "Visible in shop" to hide an item without deleting it.
+    folder: src/content/products
+    create: true
+    delete: true
+    extension: md
+    format: frontmatter
+    slug: "{{slug}}"
+    identifier_field: title
+    summary: "{{title}} · ₦{{price}} · {{category}}"
+    sortable_fields: [date, title, price, category]
+    view_groups:
+      - { label: Category, field: category }
+    view_filters:
+      - { label: Hidden from shop, field: published, pattern: false }
+      - { label: On homepage, field: featured, pattern: true }
+    fields:
+      - { label: Product name, name: title, widget: string }
+      - label: Price (₦)
+        name: price
+        widget: number
+        value_type: int
+        min: 0
+        hint: Whole naira, no commas. e.g. 45000
+      - label: Original price (₦)
+        name: compare_at_price
+        widget: number
+        value_type: int
+        min: 0
+        required: false
+        hint: Optional. Fill this in to show the item as on sale; it appears crossed out next to the price.
+      - label: Short description
+        name: summary
+        widget: string
+        required: false
+        hint: One or two lines shown next to the price. e.g. "A midi wrap dress in soft crepe with a tie waist."
+      - label: Label on photo
+        name: badge
+        widget: select
+        required: false
+        options: [New arrival, Bestseller, Limited edition, Back in stock]
+        hint: Optional. Sale and Sold out labels are added automatically.
+      - label: Category
+        name: category
+        widget: select
+        options: [Dresses, Two-piece sets, Tops, Skirts & trousers, Outerwear]
+      - label: Photos
+        name: images
+        widget: list
+        min: 1
+        hint: The first photo is the cover in the shop. Portrait photos (4:5, at least 1200px wide) look best. Drag to reorder.
+        field: { label: Photo, name: image, widget: image, choose_url: false }
+      - label: Sizes
+        name: sizes
+        widget: list
+        required: false
+        summary: "{{fields.size}}"
+        hint: Add each size you sell. Switch "In stock" off when a size sells out. Leave empty for one-size items.
+        fields:
+          - { label: Size, name: size, widget: select, options: [XS, S, M, L, XL, XXL, "UK 6", "UK 8", "UK 10", "UK 12", "UK 14", "UK 16", "UK 18", "One size"] }
+          - { label: In stock, name: in_stock, widget: boolean, default: true }
+      - label: Size and fit
+        name: size_fit
+        widget: text
+        required: false
+        hint: Optional. e.g. "Model is 5'9" and wears size M. Runs true to size."
+      - { label: Show on homepage, name: featured, widget: boolean, default: false, required: false }
+      - { label: Visible in shop, name: published, widget: boolean, default: true, required: false }
+      - { label: Date added, name: date, widget: datetime, date_format: "DD MMM YYYY", time_format: false, picker_utc: true }
+      - label: Description
+        name: body
+        widget: markdown
+        buttons: [bold, italic, bulleted-list, link]
+        editor_components: []
+        hint: Fabric, fit, length, care instructions.
+
+  - name: settings
+    label: Store settings
+    editor: { preview: false }
+    files:
+      - name: home
+        label: Homepage and store info
+        file: src/data/home.json
+        format: json
+        fields:
+          - { label: Announcement bar, name: announcement, widget: string, required: false, hint: "Thin bar at the very top of every page. Leave empty to hide it." }
+          - label: Hero (top of homepage)
+            name: hero
+            widget: object
+            fields:
+              - { label: Photo, name: image, widget: image, choose_url: false, hint: "Wide landscape photo, at least 2400px wide. Keep the left side calm so the text stays readable." }
+              - { label: Headline, name: heading, widget: string }
+              - { label: Text under headline, name: text, widget: text }
+              - { label: Button text, name: button_label, widget: string }
+              - { label: Button link, name: button_link, widget: string, default: /shop/, hint: "e.g. /shop/ or /shop/dresses/" }
+          - label: Category tiles
+            name: tiles
+            widget: list
+            min: 3
+            max: 3
+            hint: Exactly 3. The first one is the large tile.
+            summary: "{{fields.title}}"
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Short line, name: text, widget: string, required: false }
+              - { label: Photo, name: image, widget: image, choose_url: false }
+              - { label: Link, name: link, widget: string, hint: "e.g. /shop/dresses/" }
+          - label: Sale tile
+            name: promo
+            widget: object
+            hint: Links to the sale page, which lists every product with an original price filled in.
+            fields:
+              - { label: Headline, name: heading, widget: string }
+              - { label: Short line, name: text, widget: string, required: false }
+              - { label: Button text, name: button_label, widget: string }
+              - { label: Photo, name: image, widget: image, choose_url: false }
+          - label: Curated row (bottom of homepage)
+            name: edit
+            widget: object
+            fields:
+              - { label: Heading, name: heading, widget: string }
+              - label: Products
+                name: products
+                widget: relation
+                collection: products
+                search_fields: [title]
+                value_field: "{{slug}}"
+                display_fields: [title]
+                multiple: true
+                min: 4
+                max: 4
+                hint: Pick 4 products.
+          - label: Reassurance lines (under Add to bag)
+            name: trust
+            widget: object
+            fields:
+              - { label: Delivery, name: delivery, widget: string }
+              - { label: Returns, name: returns, widget: string }
+              - { label: Payment, name: payment, widget: string }
+          - label: Contact
+            name: contact
+            widget: object
+            fields:
+              - { label: WhatsApp number, name: whatsapp, widget: string, hint: "International format, digits only. e.g. 2348031234567" }
+              - { label: Instagram link, name: instagram, widget: string }
+              - { label: Email, name: email, widget: string }
+          - { label: Delivery and returns policy, name: delivery_returns, widget: markdown, buttons: [bold, bulleted-list, link], editor_components: [], hint: "Shown on every product page and on the Delivery and returns page." }

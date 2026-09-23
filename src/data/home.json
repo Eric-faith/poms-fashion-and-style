@@ -1,0 +1,56 @@
+{
+  "announcement": "Free delivery on orders over ₦100,000",
+  "hero": {
+    "image": "/uploads/hero.jpg",
+    "heading": "Bold prints. Made to be worn.",
+    "text": "African print dresses, sets and separates, cut for everyday elegance. Delivered across Nigeria.",
+    "button_label": "Shop new in",
+    "button_link": "/shop/"
+  },
+  "tiles": [
+    {
+      "title": "Dresses",
+      "text": "Wrap, maxi and midi",
+      "image": "/uploads/tile-dresses.jpg",
+      "link": "/shop/dresses/"
+    },
+    {
+      "title": "Two-piece sets",
+      "text": "Matched prints, easy to wear",
+      "image": "/uploads/tile-sets.jpg",
+      "link": "/shop/two-piece-sets/"
+    },
+    {
+      "title": "Tops",
+      "text": "The print that makes the outfit",
+      "image": "/uploads/tile-tops.jpg",
+      "link": "/shop/tops/"
+    }
+  ],
+  "promo": {
+    "heading": "Up to 20% off",
+    "text": "Selected pieces, while sizes last",
+    "button_label": "Shop the sale",
+    "image": "/uploads/tile-sale.jpg"
+  },
+  "edit": {
+    "heading": "The owambe edit",
+    "products": [
+      "bisi-maxi-dress",
+      "zara-slip-dress",
+      "ada-wrap-dress",
+      "ife-linen-set"
+    ]
+  },
+  "trust": {
+    "delivery": "Delivery across Nigeria",
+    "returns": "Exchanges within 7 days",
+    "payment": "Secure payment by card, transfer or USSD"
+  },
+  "delivery_returns": "Orders within Lagos arrive in 1 to 3 working days, and orders to other states in 3 to 5 working days. We call you to arrange a delivery time.\n\nIf something doesn't fit, message us within 7 days of delivery to arrange an exchange. Items must be unworn, unwashed and have their tags attached.",
+  "contact": {
+    "whatsapp": "2348000000000",
+    "instagram": "https://instagram.com/",
+    "email": "hello@pomsfashion.com"
+  }
+}

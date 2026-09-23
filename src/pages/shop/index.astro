@@ -1,0 +1,6 @@
+---
+import ShopPage from '../../components/ShopPage.astro';
+import { getProducts } from '../../lib/shop';
+const products = await getProducts();
+---
+<ShopPage heading="New in" products={products} />
